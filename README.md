@@ -13,7 +13,7 @@ Features
 * Search for strings in files
 * Console
 
-![alt tag](https://github.com/jdubbeldam/NppChomeDebugPlugin/blob/master/images/console.png)
+![alt tag](https://github.com/jdubbeldam/NppChomeDebugPlugin/blob/master/images/overview.png)
 
 Usage
 =====
