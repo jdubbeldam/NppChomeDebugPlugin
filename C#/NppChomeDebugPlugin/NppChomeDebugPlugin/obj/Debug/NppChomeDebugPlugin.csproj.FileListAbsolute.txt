@@ -1,0 +1,13 @@
+C:\Program Files (x86)\Notepad++\plugins\NppChomeDebugPlugin.dll
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Debug\NppChomeDebugPlugin.Properties.Resources.resources
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Debug\NppChomeDebugPlugin.csproj.GenerateResource.Cache
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\bin\Debug\NppChomeDebugPlugin.dll
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\bin\Debug\NppChomeDebugPlugin.pdb
+D:\Notepad++\plugins\ChromeDebug.dll
+D:\Notepad++\plugins\ChromeDebug.pdb
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Debug\ChromeDebug.dll
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Debug\ChromeDebug.pdb
+D:\Private\C#\Notepad++\plugins\ChromeDebug.dll
+D:\Private\C#\Notepad++\plugins\ChromeDebug.pdb
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Debug\NppChomeDebugPlugin.csprojResolveAssemblyReference.cache
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Debug\NppChomeDebugPlugin.frmChromeDebugDlg.resources

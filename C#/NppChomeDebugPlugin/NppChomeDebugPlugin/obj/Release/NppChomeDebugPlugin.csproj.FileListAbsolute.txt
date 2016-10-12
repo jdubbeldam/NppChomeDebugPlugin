@@ -1,0 +1,9 @@
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\bin\Release\ChromeDebug.dll
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\bin\Release\ChromeDebug.pdb
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Release\NppChomeDebugPlugin.frmChromeDebugDlg.resources
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Release\NppChomeDebugPlugin.Properties.Resources.resources
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Release\NppChomeDebugPlugin.csproj.GenerateResource.Cache
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Release\ChromeDebug.dll
+D:\Private\C#\NppChomeDebugPlugin\NppChomeDebugPlugin\obj\Release\ChromeDebug.pdb
+D:\Private\C#\Notepad++\plugins\ChromeDebug.dll
+D:\Private\C#\Notepad++\plugins\ChromeDebug.pdb

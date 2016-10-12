@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<link rel="stylesheet" href="style/jquery-ui.min.css">
+	
+	<script type="text/javascript" src="javascripts/json2.js"></script>
+	<script type="text/javascript" src="javascripts/jquery.js"></script>
+	<script type="text/javascript" src="javascripts/md5.js"></script>
+	<script type="text/javascript" src="javascripts/jquery-ui.min.js"></script>
+	
+	<script type="text/javascript" src="javascripts/ChromeDebug.js"></script>
+	
+	<style>
+	body {
+		padding:			0px;
+		margin:				2px;
+		overflow-x:			hidden;
+	}
+	
+	.SelectedLine:hover {
+		background-color:	#F0F8FF;
+	}
+	
+	.ui-tabs {
+		padding:			0px;
+		font-size:			10pt !important;
+	}
+		
+	</style>
+</head>
+<body>
+	<div id="tabs">
+		<ul>
+			<li><a href="#config">Config</a></li>
+			<li><a href="#files">Files</a></li>
+			<li><a href="#search">Search</a></li>
+			<li><a href="#console">Console</a></li>
+			<li><a href="#watch">Watch</a></li>
+		
+			<div  id="debugger_inactive" style='position: absolute; left: 500px; '>
+				<img src='images/pause.png' onclick='ChromePause()' title='Pause Alt+F9' style='position: absolute; left: 0px; cursor: pointer; top: 2px; width: 24px; height: 24px;' />
+				<img src='images/resume_disabled.png' title='Resume Alt+F8' style='position: absolute; left: 40px; cursor: pointer; top: 2px; width: 24px; height: 24px;' />
+				<img src='images/step_over_disabled.png' title='Step over Alt+F10' style='position: absolute; left: 80px; cursor: pointer;' />
+				<img src='images/step_into_disabled.png' title='Step into Alt+F11' style='position: absolute; left: 120px; cursor: pointer;' />
+				<img src='images/step_out_disabled.png'  title='Step out Alt+F12' style='position: absolute; left: 160px; cursor: pointer;' />
+			</div>
+			
+			<div id="debugger_active" style='display: none; position: absolute; left: 500px; '>
+				<img src='images/pause_disabled.png'title='Pause Alt+F9' style='position: absolute; left: 0px; cursor: pointer; top: 2px; width: 24px; height: 24px;' />
+				<img src='images/resume.png' onclick='ChromeResume()' title='Resume Alt+F8' style='position: absolute; left: 40px; cursor: pointer; top: 2px; width: 24px; height: 24px;' />
+				<img src='images/step_over.png' onclick='ChromeStepOver()' title='Step over Alt+F10' style='position: absolute; left: 80px; cursor: pointer;' />
+				<img src='images/step_into.png' onclick='ChromeStepInto()' title='Step into Alt+F11' style='position: absolute; left: 120px; cursor: pointer;' />
+				<img src='images/step_out.png' onclick='ChromeStepOut()' title='Step out Alt+F12' style='position: absolute; left: 160px; cursor: pointer;' />
+			</div>
+			
+			<div style="position: absolute; right: 70px;">
+				<img src='images/start_browser.png' id='restart' title='(Re)start browser' style='position: absolute; cursor: pointer; left: 0px; top: 6px; width: 20px; height: 20px;' />
+				<img src='images/refresh.png' id='reload' title='Restart plugin' style='position: absolute; cursor: pointer; left: 40px; top: 6px; width: 20px; height: 20px;' />
+			</div>
+		</ul>
+		<div id="config">
+			<span style="width: 170px; display: inline-block;">Application directory</span>:&nbsp;<input id="appdir" type="text" style="width: 700px;">&nbsp;<img src="images/find.png" id="finddirectory"  title="Directory" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;"><br />
+			<span style="width: 170px; display: inline-block;">Application url</span>:&nbsp;<input id="appurl" type="text" style="width: 700px;"><br />
+			<span style="width: 170px; display: inline-block;">Start on activation</span>:&nbsp;<input id="appstart" type="checkbox"><br />
+		</div>
+		<div id="files">
+			&nbsp;
+		</div>
+		<div id="search">
+			<span style="width: 170px; display: inline-block;">Search string</span>:&nbsp;<input id="searchstring" type="text" style="width: 300px;">&nbsp;<img src="images/find.png" id="startsearch"  title="Search" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;"><br />
+			<span style="width: 170px; display: inline-block;">Match case</span>:&nbsp;<input id="matchcase" checked type="checkbox">
+			<br /><br />
+			<div id="searchresult">&nbsp;</div>
+		</div>
+		<div id="console">
+			&nbsp;
+		</div>
+		<div id="watch">
+			<span style="width: 170px; display: inline-block;">Evaluate</span>:&nbsp;<input id="evaluatestring" type="text" style="width: 300px;">&nbsp;<img src="images/find.png" id="startevaluate" title="Evaluate" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;">
+			&nbsp;&nbsp;&nbsp;&nbsp;
+			<a href="#" onclick="ChromeEvaluate('window', true)">window</a>
+			<br /><br />
+			<div id="watchresult">&nbsp;</div>
+		</div>
+	</div>	
+</body>
+</html>
