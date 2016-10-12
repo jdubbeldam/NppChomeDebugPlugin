@@ -2,7 +2,7 @@ NppChromeDebugPlugin
 ====================
 A simple Notepad++ plugin for debugging javascripts in web applications using the Chrome Debug Protocol.
 
-![alt tag](https://github.com/jdubbeldam/NppChomeDebugPlugin/blob/master/images/watch.png)
+![alt tag](https://github.com/jdubbeldam/NppChomeDebugPlugin/blob/master/images/overview.png)
 
 Features
 ========
@@ -13,7 +13,7 @@ Features
 * Search for strings in files
 * Console
 
-![alt tag](https://github.com/jdubbeldam/NppChomeDebugPlugin/blob/master/images/overview.png)
+![alt tag](https://github.com/jdubbeldam/NppChomeDebugPlugin/blob/master/images/console.png)
 
 Usage
 =====
