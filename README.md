@@ -1,6 +1,6 @@
 NppChromeDebugPlugin
 ====================
-A simple Notepad++ plugin for debugging javascripts in web applications using the Chrome Debug Protocol.
+A simple Notepad++ plugin for debugging javascripts in web applications using the Chrome Debugging Protocol.
 
 ![alt tag](https://github.com/jdubbeldam/NppChomeDebugPlugin/blob/master/images/overview.png)
 
