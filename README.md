@@ -23,3 +23,9 @@ Use Ctrl+d to start the plugin. In the 'Config' tab choose the path to your web 
 in 'Application directory' and fill in the correct url. Click on the '(Re)start browser)'
 button ( >| on right side). Open the appropriate javascript file and press Ctrl+b to place a
 breakpoint.
+
+Prerequisite
+============
+
+* Internet Explorer 10 or higher (tested with IE11)
+* Recent version of Chrome (tested with 53.0.2785.143)
