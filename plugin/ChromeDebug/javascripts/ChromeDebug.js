@@ -772,10 +772,10 @@ function ChromeGetScopeVars(CallFrameIndex) {
 					File = GetFileByScriptId(CallFrame.location.scriptId);
 					
 					if (File) {
-						FileInfo = '<span style="color: gray; cursor: pointer;" onclick="GoToLine(\'' + File.Hash + '\', ' + (CallFrame.location.lineNumber + 1) + ')">' + File.Url.replace(AppUrl, '') + ':' + (CallFrame.location.lineNumber + 1) + '</span>';
+						FileInfo = '<span style="position: relative; left: 20px; color: gray; cursor: pointer;" onclick="GoToLine(\'' + File.Hash + '\', ' + (CallFrame.location.lineNumber + 1) + ')">(' + File.Url.replace(AppUrl, '') + ':' + (CallFrame.location.lineNumber + 1) + ')</span>';
 					}
 
-					Text = '<span style="display: inline-block; width: 500px;"><span style="cursor: pointer; " onclick=\'ChromeGetProperties(JSON.stringify(\"' + CallFrame.this.objectId.replaceAll('"', '\\"') +  '\"))\'>' + CallFrame.this.description + '</span>.<span style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().next().css("display") == "none") ? ChromeGetProperties(JSON.stringify(\"' + Scope.object.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next().next()) : $(this).next().next().css("display", "none")\'>' + Scope.name + '</span></span>' + FileInfo + '<div name="scopechain:' + Index1 + ':' + Index2 + '" style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
+					Text = '<span style="cursor: pointer; " onclick=\'ChromeGetProperties(JSON.stringify(\"' + CallFrame.this.objectId.replaceAll('"', '\\"') +  '\"))\'>' + CallFrame.this.description + '</span>.<span style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().next().css("display") == "none") ? ChromeGetProperties(JSON.stringify(\"' + Scope.object.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next().next()) : $(this).next().next().css("display", "none")\'>' + Scope.name + '</span>' + FileInfo + '<div name="scopechain:' + Index1 + ':' + Index2 + '" style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
 					
 					$('#watchresult').append(Text);
 
