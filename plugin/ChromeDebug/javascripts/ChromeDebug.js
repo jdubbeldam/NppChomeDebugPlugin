@@ -1,8 +1,8 @@
 var
 AppFiles			= {},
-AppUrl				= '',
-AppDir				= '',
-AppStart			= true,
+ChromeUrl			= '',
+ChromeDir			= '',
+ChromeStart			= true,
 Breakpoints			= {},
 AppWs				= {},
 CallId				= 0,
@@ -33,33 +33,37 @@ $(document).ready(
 	
 		GetConfig();
 		
-		$('#appdir')
-			.val(AppDir)
+		$('#chromedir')
+			.val(ChromeDir)
 			.change(
 				function() {
 					if (!window.external.IsDirectory( $(this).val() )) {
-						$(this).val(AppDir);
+						$(this).val(ChromeDir);
+					} else {
+						ChromeDir = $(this).val();
 					}
 				}
 			)
 		;
 
-		$('#appurl')
-			.val(AppUrl)
+		$('#chromeurl')
+			.val(ChromeUrl)
 			.change(
 				function() {
 					if (!window.external.IsUrl( $(this).val() )) {
-						$(this).val(AppUrl);
+						$(this).val(ChromeUrl);	
+					} else {
+						ChromeUrl = $(this).val();
 					}
 				}
 			)
 		;			
 		
-		$('#appstart')
-			.attr('checked', AppStart)
+		$('#chromestart')
+			.attr('checked', ChromeStart)
 			.click(
 				function() {
-					AppStart = $(this).attr('checked');
+					ChromeStart = $(this).attr('checked');
 				}
 			)
 		;
@@ -70,7 +74,7 @@ $(document).ready(
 				WsClose();
 				
 				//NppRemoveAllBreakpoints();
-				ChromeStart(AppUrl);
+				StartChrome(ChromeUrl);
 			}
 		);
 		
@@ -94,7 +98,7 @@ $(document).ready(
 
 		$('#finddirectory').click(
 			function() {
-				window.external.SelectDirectory($('#appdir').val());
+				window.external.SelectDirectory($('#chromedir').val());
 			}
 		);
 		
@@ -114,8 +118,8 @@ $(document).ready(
 
 		NppGetOpenedFiles();
 
-		if (AppStart) {
-			ChromeStart(AppUrl);
+		if (ChromeStart) {
+			StartChrome(ChromeUrl);
 		}
 		
 		document.focus();
@@ -171,17 +175,17 @@ function GetConfig() {
 	if (Config) {
 		Config = JSON.parse(Config);
 	
-		AppDir		= Config.AppDir;
-		AppUrl		= Config.AppUrl;
-		AppStart	= Config.AppStart;
+		ChromeDir	= Config.ChromeDir;
+		ChromeUrl	= Config.ChromeUrl;
+		ChromeStart	= Config.ChromeStart;
 	}
 }
 
 function SaveConfig() {
 	var Config = {
-		AppUrl 		: AppUrl,
-		AppDir 		: AppDir,
-		AppStart 	: AppStart
+		ChromeUrl 	: ChromeUrl,
+		ChromeDir 	: ChromeDir,
+		ChromeStart : ChromeStart
 	}
 
 	FilePutContents('config.json', JSON.stringify(Config));
@@ -198,7 +202,7 @@ function OnChromeStarted(Url) {
 						for (AppNr in Data) {
 							App = Data[AppNr]; 
 							
-							if (App.url == AppUrl) {
+							if (App.url == ChromeUrl) {
 								AppWs = new WebSocket(App.webSocketDebuggerUrl);
 
 								AppWs.onopen = function (evt) {									
@@ -292,7 +296,7 @@ function SetOpenedFiles() {
 	for (Index=0; Index < arguments.length - 1; Index+=2) {
 		FilePath = arguments[Index];
 
-		if (FilePath.toLowerCase().indexOf(AppDir.toLowerCase()) > -1) {
+		if (FilePath.toLowerCase().indexOf(ChromeDir.toLowerCase()) > -1) {
 			File		= AddFile(FilePath);
 			File.Opened	= true;
 			Md5			= arguments[Index + 1];
@@ -343,7 +347,7 @@ function ShowFiles(SearchString /* optional */, MatchCase /* optional */) {
 		}
 		
 		if (Add) {
-			RelPath = File.FilePath.replaceAll(AppDir, "");
+			RelPath = File.FilePath.replaceAll(ChromeDir, "");
 
 			Parts	= RelPath.split('\\');
 			MaxIndex= Parts.length - 1;
@@ -521,10 +525,10 @@ function ConsoleLog(Message, CallFrames /*optional*/) {
 				if (Index > 0) {
 					FileLineMenu += '<li><div style="text-decoration: underline;" onclick="GoToLine(\'' +  File.Hash + '\', ' + LineNr + ')" >' + Parts[Parts.length -1] + ', Line: ' + LineNr + '</div></li>';
 				} else {
-					FileLine = '<span style="text-decoration: underline; cursor: pointer; position: absolute; background-color: white; text-align: right; right: 40px;"  onclick="GoToLine(\'' +  File.Hash + '\', ' + LineNr + ')" >' + Parts[Parts.length -1] + ', Line: ' + LineNr + '</span>';
+					FileLine = '<span style="text-decoration: underline; cursor: pointer; position: absolute; background-color: white; text-align: right; right: 30px;"  onclick="GoToLine(\'' +  File.Hash + '\', ' + LineNr + ')" >' + Parts[Parts.length -1] + ', Line: ' + LineNr + '</span>';
 					
 					if (CallFrames.length > 1) {
-						FileLineMenu = '<ul id="' + Id + '" style="position: absolute; border: 0px; width: 15px; right: 20px;" ><li>..<ul style="width: 400px;">';
+						FileLineMenu = '<ul id="' + Id + '" style="position: absolute; border: 0px; width: 15px; right: 5px;" ><li>..<ul style="width: 400px;">';
 					}
 				}
 			}
@@ -581,20 +585,20 @@ function CleanUpDebugStep() {
 	NppRemoveAllBreakpoints(NPP.MARKER_CURRENT_POS);
 }
 
-function SetAppDir(Dir) {
+function SetChromeDir(Dir) {
 	if (Dir.slice(-1) != '\\') {
 		Dir += '\\';
 	}
 	
-	AppDir = Dir;
+	ChromeDir = Dir;
 	
-	$('#appdir').val(Dir);
+	$('#chromedir').val(Dir);
 }
 
-function SetAppUrl(Url) {
-	AppUrl = Url;
+function SetChromeUrl(Url) {
+	ChromeUrl = Url;
 	
-	$('#appurl').val(Url);
+	$('#chromeurl').val(Url);
 }	
 
 // Npp ==========================================================================================================
@@ -663,7 +667,7 @@ function NppGetCurrentFile() {
 
 // Chrome debugger functions https://chromedevtools.github.io/debugger-protocol-viewer/1-1/Debugger/#method-resume
 
-function ChromeStart(Url) {
+function StartChrome(Url) {
 	window.external.ChromeStart(Url);
 }
 
@@ -675,7 +679,7 @@ function ChromeAddScript(Params) {
 	var FilePath, File, LineNr;
 	
 	if (Params.url) {
-		FilePath	= Params.url.split('?')[0].replaceAll(AppUrl, AppDir).replace(new RegExp('/', 'g'), '\\');
+		FilePath	= Params.url.split('?')[0].replaceAll(ChromeUrl, ChromeDir).replace(new RegExp('/', 'g'), '\\');
 		File		= AddFile(FilePath)
 		File.Url	= Params.url;
 		
@@ -772,7 +776,7 @@ function ChromeGetScopeVars(CallFrameIndex) {
 					File = GetFileByScriptId(CallFrame.location.scriptId);
 					
 					if (File) {
-						FileInfo = '<span style="position: relative; left: 20px; color: gray; cursor: pointer;" onclick="GoToLine(\'' + File.Hash + '\', ' + (CallFrame.location.lineNumber + 1) + ')">(' + File.Url.replace(AppUrl, '') + ':' + (CallFrame.location.lineNumber + 1) + ')</span>';
+						FileInfo = '<span style="position: relative; left: 20px; color: gray; cursor: pointer;" onclick="GoToLine(\'' + File.Hash + '\', ' + (CallFrame.location.lineNumber + 1) + ')">(' + File.Url.replace(ChromeUrl, '') + ':' + (CallFrame.location.lineNumber + 1) + ')</span>';
 					}
 
 					Text = '<span style="cursor: pointer; " onclick=\'ChromeGetProperties(JSON.stringify(\"' + CallFrame.this.objectId.replaceAll('"', '\\"') +  '\"))\'>' + CallFrame.this.description + '</span>.<span style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().next().css("display") == "none") ? ChromeGetProperties(JSON.stringify(\"' + Scope.object.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next().next()) : $(this).next().next().css("display", "none")\'>' + Scope.name + '</span>' + FileInfo + '<div name="scopechain:' + Index1 + ':' + Index2 + '" style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
