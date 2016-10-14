@@ -21,7 +21,7 @@ Usage
 Copy the content of the 'plugin' folder to your local 'notepad++\plugins\' folder.
 Use Ctrl+d to start the plugin. In the 'Config' tab choose the path to your web application
 in 'Application directory' and fill in the correct url. Click on the 'Restart plugin'
-button in the right corner. Open the appropriate javascript file, go to the appropriate line and press Ctrl+b to place a
+button in the right corner (![alt tag](https://github.com/jdubbeldam/NppChomeDebugPlugin/blob/master/images/refresh.png)). Open the appropriate javascript file, go to the appropriate line and press Ctrl+b to place a
 breakpoint.
 
 Prerequisite
