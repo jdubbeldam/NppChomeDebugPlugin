@@ -14,7 +14,22 @@
 	body {
 		padding:			0px;
 		margin:				2px;
-		overflow-x:			hidden;
+		overflow:			hidden;
+		height:				100%;
+	}
+
+	html, body {
+		height: 100%;
+	}
+	
+	#tabs {
+		height: 100%;
+	}
+
+	.tabcontent {
+		height: 			calc(100% - 67px);
+		overflow-x: 		hidden;
+		overflow-y: 		auto;
 	}
 	
 	.SelectedLine:hover {
@@ -58,24 +73,26 @@
 				<img src='images/refresh.png' id='reload' title='Restart plugin' style='position: absolute; cursor: pointer; left: 40px; top: 6px; width: 20px; height: 20px;' />
 			</div>
 		</ul>
-		<div id="config">
+		<div id="config"  class="tabcontent">
+			<!-- <span style="width: 170px; display: inline-block;">Type</span>:&nbsp;<select id="apptype" style="width: 200px;"><option selected value='chrome'>Chrome web application</option><option value='nodejs'>NodeJs</option></select><br /> -->
 			<span style="width: 170px; display: inline-block;">Application directory</span>:&nbsp;<input id="appdir" type="text" style="width: 700px;">&nbsp;<img src="images/find.png" id="finddirectory"  title="Directory" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;"><br />
 			<span style="width: 170px; display: inline-block;">Application url</span>:&nbsp;<input id="appurl" type="text" style="width: 700px;"><br />
+			<!-- <span style="width: 170px; display: inline-block;">Debugger url</span>:&nbsp;<input id="appdebugport" type="text" style="width: 400px;" value="http://127.0.0.1:9222/json/list"><br /> -->
 			<span style="width: 170px; display: inline-block;">Start on activation</span>:&nbsp;<input id="appstart" type="checkbox"><br />
 		</div>
-		<div id="files">
+		<div id="files" class="tabcontent">
 			&nbsp;
 		</div>
-		<div id="search">
+		<div id="search" class="tabcontent">
 			<span style="width: 170px; display: inline-block;">Search string</span>:&nbsp;<input id="searchstring" type="text" style="width: 300px;">&nbsp;<img src="images/find.png" id="startsearch"  title="Search" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;"><br />
 			<span style="width: 170px; display: inline-block;">Match case</span>:&nbsp;<input id="matchcase" checked type="checkbox">
 			<br /><br />
 			<div id="searchresult">&nbsp;</div>
 		</div>
-		<div id="console">
+		<div id="console" class="tabcontent">
 			&nbsp;
 		</div>
-		<div id="watch">
+		<div id="watch" class="tabcontent">
 			<span style="width: 170px; display: inline-block;">Evaluate</span>:&nbsp;<input id="evaluatestring" type="text" style="width: 300px;">&nbsp;<img src="images/find.png" id="startevaluate" title="Evaluate" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;">
 			&nbsp;&nbsp;&nbsp;&nbsp;
 			<a href="#" onclick="ChromeEvaluate('window', true)">window</a>

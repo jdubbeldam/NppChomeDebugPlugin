@@ -120,7 +120,7 @@ $(document).ready(
 		
 		document.focus();
 		
-				// Nodejs v7 test
+		// Nodejs v7 test
 		/*
 		var AppWs2 = new WebSocket('ws://localhost:9229/node');
 
@@ -187,7 +187,7 @@ function SaveConfig() {
 	FilePutContents('config.json', JSON.stringify(Config));
 }
 
-function OnChromeStarted(Url) {		
+function OnChromeStarted(Url) {
 	$.ajax({
 		type:		"GET",
 		url:		Url,
@@ -495,6 +495,10 @@ function ConsoleMessage(Params) {
 			Text = Params.message.text;
 		}
 		
+		if (Params.message.level == 'error') {
+			Text = '<span style="color: red;">' + Text + '</span>';
+		}
+		
 		ConsoleLog(Text, CallFrames);
 	}
 }
@@ -517,10 +521,10 @@ function ConsoleLog(Message, CallFrames /*optional*/) {
 				if (Index > 0) {
 					FileLineMenu += '<li><div style="text-decoration: underline;" onclick="GoToLine(\'' +  File.Hash + '\', ' + LineNr + ')" >' + Parts[Parts.length -1] + ', Line: ' + LineNr + '</div></li>';
 				} else {
-					FileLine = '<span style="text-decoration: underline; cursor: pointer; position: absolute; background-color: white; text-align: right; right: 50px;"  onclick="GoToLine(\'' +  File.Hash + '\', ' + LineNr + ')" >' + Parts[Parts.length -1] + ', Line: ' + LineNr + '</span>';
+					FileLine = '<span style="text-decoration: underline; cursor: pointer; position: absolute; background-color: white; text-align: right; right: 40px;"  onclick="GoToLine(\'' +  File.Hash + '\', ' + LineNr + ')" >' + Parts[Parts.length -1] + ', Line: ' + LineNr + '</span>';
 					
 					if (CallFrames.length > 1) {
-						FileLineMenu = '<ul id="' + Id + '" style="position: absolute; border: 0px; width: 30px; right: 10px;" ><li>..<ul style="width: 400px;">';
+						FileLineMenu = '<ul id="' + Id + '" style="position: absolute; border: 0px; width: 15px; right: 20px;" ><li>..<ul style="width: 400px;">';
 					}
 				}
 			}
@@ -768,10 +772,10 @@ function ChromeGetScopeVars(CallFrameIndex) {
 					File = GetFileByScriptId(CallFrame.location.scriptId);
 					
 					if (File) {
-						FileInfo = '<span style="position: absolute; left: 500px; color: gray; cursor: pointer;" onclick="GoToLine(\'' + File.Hash + '\', ' + (CallFrame.location.lineNumber + 1) + ')">' + File.Url.replace(AppUrl, '') + ':' + (CallFrame.location.lineNumber + 1) + '</span>';
+						FileInfo = '<span style="color: gray; cursor: pointer;" onclick="GoToLine(\'' + File.Hash + '\', ' + (CallFrame.location.lineNumber + 1) + ')">' + File.Url.replace(AppUrl, '') + ':' + (CallFrame.location.lineNumber + 1) + '</span>';
 					}
 
-					Text = '<span style="cursor: pointer; " onclick=\'ChromeGetProperties(JSON.stringify(\"' + CallFrame.this.objectId.replaceAll('"', '\\"') +  '\"))\'>' + CallFrame.this.description + '</span>.<span style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().next().css("display") == "none") ? ChromeGetProperties(JSON.stringify(\"' + Scope.object.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next().next()) : $(this).next().next().css("display", "none")\'>' + Scope.name + '</span>' + FileInfo + '<div name="scopechain:' + Index1 + ':' + Index2 + '" style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
+					Text = '<span style="display: inline-block; width: 500px;"><span style="cursor: pointer; " onclick=\'ChromeGetProperties(JSON.stringify(\"' + CallFrame.this.objectId.replaceAll('"', '\\"') +  '\"))\'>' + CallFrame.this.description + '</span>.<span style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().next().css("display") == "none") ? ChromeGetProperties(JSON.stringify(\"' + Scope.object.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next().next()) : $(this).next().next().css("display", "none")\'>' + Scope.name + '</span></span>' + FileInfo + '<div name="scopechain:' + Index1 + ':' + Index2 + '" style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
 					
 					$('#watchresult').append(Text);
 
