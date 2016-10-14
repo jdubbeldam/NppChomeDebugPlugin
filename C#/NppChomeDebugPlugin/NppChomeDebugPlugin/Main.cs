@@ -42,7 +42,7 @@ namespace NppChomeDebugPlugin
             iniFilePath = Path.Combine(iniFilePath, PluginName + ".ini");
             someSetting = (Win32.GetPrivateProfileInt("SomeSection", "SomeKey", 0, iniFilePath) != 0);
 
-            PluginBase.SetCommand(0, "Dialog", ChromeDebugDialog, new ShortcutKey(false, true, false, Keys.D)); idChromeDebugDlg = 0;
+            PluginBase.SetCommand(0, "Chrome Debugger", ChromeDebugDialog, new ShortcutKey(false, true, false, Keys.D)); idChromeDebugDlg = 0;
             PluginBase.SetCommand(1, "Toggle breakpoint", ToggleBreakpoint, new ShortcutKey(false, true, false, Keys.B));
             PluginBase.SetCommand(2, "Continue", DebugResume, new ShortcutKey(false, true, false, Keys.F8));
             PluginBase.SetCommand(3, "Pause", DebugPause, new ShortcutKey(false, true, false, Keys.F9));

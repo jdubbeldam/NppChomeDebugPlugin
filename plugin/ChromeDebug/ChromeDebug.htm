@@ -74,11 +74,17 @@
 			</div>
 		</ul>
 		<div id="config"  class="tabcontent">
-			<!-- <span style="width: 170px; display: inline-block;">Type</span>:&nbsp;<select id="apptype" style="width: 200px;"><option selected value='chrome'>Chrome web application</option><option value='nodejs'>NodeJs</option></select><br /> -->
-			<span style="width: 170px; display: inline-block;">Application directory</span>:&nbsp;<input id="chromedir" type="text" style="width: 700px;">&nbsp;<img src="images/find.png" id="finddirectory"  title="Directory" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;"><br />
-			<span style="width: 170px; display: inline-block;">Application url</span>:&nbsp;<input id="chromeurl" type="text" style="width: 700px;"><br />
-			<!-- <span style="width: 170px; display: inline-block;">Debugger url</span>:&nbsp;<input id="appdebugport" type="text" style="width: 400px;" value="http://127.0.0.1:9222/json/list"><br /> -->
-			<span style="width: 170px; display: inline-block;">Start on activation</span>:&nbsp;<input id="chromestart" type="checkbox"><br />
+			<span style="width: 170px; display: inline-block;">Client application directory</span>:&nbsp;<input id="chromedir" type="text" style="width: 700px;">&nbsp;<img src="images/find.png" name="finddirectory" target="#chromedir" title="Directory" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;"><br />
+			<span style="width: 170px; display: inline-block;">Client application url</span>:&nbsp;<input id="chromeurl" type="text" style="width: 700px;"><br />
+			<span style="width: 170px; display: inline-block;">Start Chrome on plugin init</span>:&nbsp;<input id="chromestart" type="checkbox"><br />
+<!--
+			<br />
+			<hr style="height:1px;border:none;color:gainsboro;background-color:gainsboro;">
+			<b>(optional)</b><br />
+			<span style="width: 170px; display: inline-block;">NodeJs script file</span>:&nbsp;<input id="nodescript" type="text" style="width: 700px;">&nbsp;<img src="images/find.png" name="findfile" target="#nodescript" title="File" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;"><br />
+			<span style="width: 170px; display: inline-block;">NodeJs exe path</span>:&nbsp;<input id="nodeexepath" type="text" style="width: 700px;">&nbsp;<img src="images/find.png" name="findfile" target="#nodeexepath" title="File" style="cursor: pointer; position: relative; top: 5px; width: 20px; height: 20px;"><br />
+			<span style="width: 170px; display: inline-block;">Start NodeJs on plugin init</span>:&nbsp;<input id="nodestart" type="checkbox"><br />
+-->			
 		</div>
 		<div id="files" class="tabcontent">
 			&nbsp;

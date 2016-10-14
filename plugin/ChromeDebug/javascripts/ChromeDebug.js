@@ -3,6 +3,9 @@ AppFiles			= {},
 ChromeUrl			= '',
 ChromeDir			= '',
 ChromeStart			= true,
+NodeExePath			= '',
+NodeScript				= '',
+NodeStart			= true,
 Breakpoints			= {},
 AppWs				= {},
 CallId				= 0,
@@ -37,7 +40,7 @@ $(document).ready(
 			.val(ChromeDir)
 			.change(
 				function() {
-					if (!window.external.IsDirectory( $(this).val() )) {
+					if (!window.external.IsDirectory('#chromedir', $(this).val() )) {
 						$(this).val(ChromeDir);
 					} else {
 						ChromeDir = $(this).val();
@@ -46,6 +49,19 @@ $(document).ready(
 			)
 		;
 
+		$('#nodescript')
+			.val(NodeScript)
+			.change(
+				function() {
+					if (!window.external.IsDirectory('#nodescript', $(this).val() )) {
+						$(this).val(NodeScript);
+					} else {
+						NodeScript = $(this).val();
+					}
+				}
+			)
+		;
+		
 		$('#chromeurl')
 			.val(ChromeUrl)
 			.change(
@@ -59,11 +75,33 @@ $(document).ready(
 			)
 		;			
 		
+		$('#nodeexepath')
+			.val(NodeExePath)
+			.change(
+				function() {
+					if (!window.external.IsFile('#nodeexepath', $(this).val() )) {
+						$(this).val(NodeExePath);	
+					} else {
+						NodeExePath = $(this).val();
+					}
+				}
+			)
+		;
+		
 		$('#chromestart')
 			.attr('checked', ChromeStart)
 			.click(
 				function() {
 					ChromeStart = $(this).attr('checked');
+				}
+			)
+		;
+
+		$('#nodestart')
+			.attr('checked', NodeStart)
+			.click(
+				function() {
+					NodeStart = $(this).attr('checked');
 				}
 			)
 		;
@@ -96,11 +134,38 @@ $(document).ready(
 			}
 		);
 
-		$('#finddirectory').click(
+		$('img[name="finddirectory"]').click(
 			function() {
-				window.external.SelectDirectory($('#chromedir').val());
+				window.external.SelectDirectory($(this).attr('target'), $($(this).attr('target')).val());
 			}
 		);
+		
+		$('img[name="findfile"]').click(
+			function() {
+				var
+				Filter	= '',
+				Target	= $(this).attr('target'),
+				Script	= $(Target).val();
+				
+				if (!Script) {
+					Script = '';
+				}
+				
+				switch (Target) {
+					case '#nodescript':
+						Filter = 'Javascript files (*.js)|*.js';
+						
+						break;
+					case '#nodeexepath':
+						Filter = 'NodeJs exe file (*.exe)|*.exe';
+						
+						break;
+				}
+
+				window.external.SelectFile(Target, Filter, Script);
+			}
+		);
+		
 		
 		$('#searchstring').on('keypress', function (e) {
 			if(e.which === 13){
@@ -178,14 +243,20 @@ function GetConfig() {
 		ChromeDir	= Config.ChromeDir;
 		ChromeUrl	= Config.ChromeUrl;
 		ChromeStart	= Config.ChromeStart;
+		NodeExePath = Config.NodeExePath;
+		NodeScript 	= Config.NodeScript;
+		NodeStart 	= Config.NodeStart;
 	}
 }
 
 function SaveConfig() {
 	var Config = {
-		ChromeUrl 	: ChromeUrl,
-		ChromeDir 	: ChromeDir,
-		ChromeStart : ChromeStart
+		ChromeUrl 		: ChromeUrl,
+		ChromeDir 		: ChromeDir,
+		ChromeStart 	: ChromeStart,
+		NodeExePath 	: NodeExePath,
+		NodeScript 		: NodeScript,
+		NodeStart 		: NodeStart
 	}
 
 	FilePutContents('config.json', JSON.stringify(Config));
@@ -585,14 +656,28 @@ function CleanUpDebugStep() {
 	NppRemoveAllBreakpoints(NPP.MARKER_CURRENT_POS);
 }
 
-function SetChromeDir(Dir) {
-	if (Dir.slice(-1) != '\\') {
-		Dir += '\\';
+function SetTarget(Target, Value) {
+	switch (Target) {
+		case '#chromedir':
+			if (Value.slice(-1) != '\\') {
+				Value += '\\';
+			}
+			
+			ChromeDir = Value;
+			
+			break;
+		case '#nodescript':
+			NodeScript = Value;
+			
+			break;
+		case '#nodeexepath':
+			NodeExePath = Value;
+			
+			break;
 	}
 	
-	ChromeDir = Dir;
 	
-	$('#chromedir').val(Dir);
+	$(Target).val(Value);
 }
 
 function SetChromeUrl(Url) {
@@ -828,8 +913,8 @@ function ChromeReceiveProperties(Result, AppendTo) {
 		}
 	}
 	
-	ConsoleLog(JSON.stringify(NameSort.sort()));
-	ConsoleLog(JSON.stringify(NameIndex));
+	//ConsoleLog(JSON.stringify(NameSort.sort()));
+	//ConsoleLog(JSON.stringify(NameIndex));
 	
 	for (Index in NameSort.sort()) {
 		Item = Result.result[NameIndex[NameSort[Index]]];

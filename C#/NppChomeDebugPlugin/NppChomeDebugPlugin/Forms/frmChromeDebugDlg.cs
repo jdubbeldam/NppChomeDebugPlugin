@@ -116,6 +116,8 @@ namespace NppChomeDebugPlugin
 
         public void ChromeStart(string Url)
         {
+            bool IsOpen = false;
+
             ChromeProc = null;
 
             // Check if Chrome process is already available
@@ -149,11 +151,14 @@ namespace NppChomeDebugPlugin
 
             Thread.Sleep(200);
 
-            IsPortOpen("127.0.0.1", 9222, new TimeSpan(0, 0, 30));
+            IsOpen = IsPortOpen("127.0.0.1", 9222, new TimeSpan(0, 0, 30));
 
-            Thread.Sleep(200);
+            if (IsOpen)
+            {
+                Thread.Sleep(200);
 
-            Browser.Document.InvokeScript("OnChromeStarted", new Object[] {"http://127.0.0.1:9222/json/list"});
+                Browser.Document.InvokeScript("OnChromeStarted", new Object[] { "http://127.0.0.1:9222/json/list" });
+            }
         }
 
         bool IsPortOpen(string Host, int Port, TimeSpan Timeout)
@@ -179,7 +184,6 @@ namespace NppChomeDebugPlugin
             }
             return true;
         }
-
 
         public void ChromeStop()
         {
@@ -267,7 +271,7 @@ namespace NppChomeDebugPlugin
             catch { }
         }
 
-        public void SelectDirectory(string CurrentDir = "")
+        public void SelectDirectory(string Target, string CurrentDir = "")
         {
             FolderBrowserDialog Dir = new FolderBrowserDialog();
             Dir.SelectedPath = CurrentDir;
@@ -275,17 +279,40 @@ namespace NppChomeDebugPlugin
 
             if (Dir.SelectedPath != null)
             {
-                Browser.Document.InvokeScript("SetAppDir", new object[] { Dir.SelectedPath });
+                Browser.Document.InvokeScript("SetTarget", new object[] { Target, Dir.SelectedPath });
             }
         }
 
-        public bool IsDirectory(string Dir)
+        public void SelectFile(string Target, string Filter="", string CurrentFile = "")
+        {
+            OpenFileDialog Dialog = new OpenFileDialog();
+
+            if (CurrentFile != "")
+            {
+                FileInfo Fo = new FileInfo(CurrentFile);
+                Dialog.InitialDirectory = Fo.DirectoryName;
+            }
+
+            if (Filter != "")
+            {
+                Dialog.Filter = Filter;
+            }
+
+            Dialog.ShowDialog();
+
+            if (Dialog.FileName != null)
+            {
+                Browser.Document.InvokeScript("SetTarget", new object[] { Target, Dialog.FileName });
+            }
+        }
+
+        public bool IsDirectory(string Target, string Dir)
         {
             bool IsDir = Directory.Exists(Dir);
 
             if (IsDir)
             {
-                Browser.Document.InvokeScript("SetAppDir", new object[] { Dir });
+                Browser.Document.InvokeScript("SetTarget", new object[] { Target, Dir });
             }
             else
             {
@@ -295,13 +322,29 @@ namespace NppChomeDebugPlugin
             return IsDir;
         }
 
+        public bool IsFile(string Target, string FileName)
+        {
+            bool IsFile = File.Exists(FileName);
+
+            if (IsFile)
+            {
+                Browser.Document.InvokeScript("SetTarget", new object[] { Target, FileName });
+            }
+            else
+            {
+                MessageBox.Show("'" + FileName + "' is not a valid file.");
+            }
+
+            return IsFile;
+        }
+
         public bool IsUrl(string Url)
         {
             bool IsUrl = Uri.IsWellFormedUriString(Url, UriKind.Absolute);
 
             if (IsUrl)
             {
-                Browser.Document.InvokeScript("SetAppUrl", new object[] { Url });
+                Browser.Document.InvokeScript("SetChromeUrl", new object[] { Url });
             }
             else
             {
