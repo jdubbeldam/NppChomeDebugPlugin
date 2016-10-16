@@ -151,7 +151,7 @@ namespace NppChomeDebugPlugin
 
             Thread.Sleep(200);
 
-            IsOpen = IsPortOpen("127.0.0.1", 9222, new TimeSpan(0, 0, 30));
+            IsOpen = IsPortOpen("127.0.0.1", 9222, 30);
 
             if (IsOpen)
             {
@@ -161,28 +161,33 @@ namespace NppChomeDebugPlugin
             }
         }
 
-        bool IsPortOpen(string Host, int Port, TimeSpan Timeout)
+        bool IsPortOpen(string Host, int Port, int Wait)
         {
-            try
+            DateTime Start = DateTime.Now;
+
+            while ((DateTime.Now - Start).TotalSeconds < Wait)
             {
-                using (TcpClient Client = new TcpClient())
+                try
                 {
-                    IAsyncResult Result = Client.BeginConnect(Host, Port, null, null);
-                    bool Success = Result.AsyncWaitHandle.WaitOne(Timeout);
-                    if (!Success)
+                    using (TcpClient Client = new TcpClient())
                     {
-                        return false;
+                        IAsyncResult Result = Client.BeginConnect(Host, Port, null, null);
+                        bool Success = Result.AsyncWaitHandle.WaitOne(new TimeSpan(0, 0, 1));
+                        Client.EndConnect(Result);
+
+                        if (Success)
+                        {
+                            return true;
+                        }
                     }
 
-                    Client.EndConnect(Result);
                 }
+                catch { }
 
+                Thread.Sleep(100);
             }
-            catch
-            {
-                return false;
-            }
-            return true;
+
+            return false;
         }
 
         public void ChromeStop()
