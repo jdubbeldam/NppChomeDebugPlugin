@@ -1,11 +1,18 @@
 var
+LOG_ENABLED			= false,
 AppFiles			= {},
+NppFiles			= {},
+ChromeUse			= false,
 ChromeUrl			= '',
 ChromeDir			= '',
 ChromeStart			= true,
+NodeUse				= false,
+NodeScript			= '',
 NodeExePath			= '',
-NodeScript				= '',
+NodeParams			= '',
+NodeExeType			= '',
 NodeStart			= true,
+NodeWorkingDirectory= '',
 Breakpoints			= {},
 AppWs				= {},
 CallId				= 0,
@@ -14,7 +21,8 @@ CurrentDebugFile	= "",
 CurrentBreakpoint	= {},
 AppendToLog			= false,
 ActiveTabId			= "",
-ConsoleLineNr		= 0
+ConsoleLineNr		= 0,
+ActiveTypes			= {}
 ;
 
 $(document).ready(		
@@ -36,6 +44,14 @@ $(document).ready(
 	
 		GetConfig();
 		
+		if (ChromeUse) {
+			$('#activetype').append($('<option>', { value: 'Chrome'}).text('Chrome'));
+		}
+		
+		if (NodeUse) {
+			$('#activetype').append($('<option>', { value: 'NodeJs'}).text('NodeJs'));
+		}
+		
 		$('#chromedir')
 			.val(ChromeDir)
 			.change(
@@ -48,7 +64,7 @@ $(document).ready(
 				}
 			)
 		;
-
+		
 		$('#nodescript')
 			.val(NodeScript)
 			.change(
@@ -66,7 +82,7 @@ $(document).ready(
 			.val(ChromeUrl)
 			.change(
 				function() {
-					if (!window.external.IsUrl( $(this).val() )) {
+					if (!window.external.IsUrl('#chromeurl', $(this).val() )) {
 						$(this).val(ChromeUrl);	
 					} else {
 						ChromeUrl = $(this).val();
@@ -79,14 +95,53 @@ $(document).ready(
 			.val(NodeExePath)
 			.change(
 				function() {
-					if (!window.external.IsFile('#nodeexepath', $(this).val() )) {
+					var Valid,
+					Val = $(this).val();
+					
+					if (Val.indexOf('://') > -1) {
+						Valid = window.external.IsUrl('#nodeexepath', Val );
+					} else {
+						Valid = window.external.IsFile('#nodeexepath', Val );					
+					}
+					
+					if (!Valid) {
 						$(this).val(NodeExePath);	
 					} else {
-						NodeExePath = $(this).val();
+						NodeExePath = Val;
 					}
+					
+					SetNodeExeType();
 				}
 			)
 		;
+		
+		SetNodeExeType();
+		
+		$('#nodeuse')
+			.attr('checked', NodeUse)
+			.click(
+				function() {
+					NodeUse = $(this).attr('checked');
+					
+					SetNodeConfig();
+				}
+			)
+		;
+		
+		SetNodeConfig();
+		
+		$('#chromeuse')
+			.attr('checked', ChromeUse)
+			.click(
+				function() {
+					ChromeUse = $(this).attr('checked');
+					
+					SetChromeConfig();
+				}
+			)
+		;
+		
+		SetChromeConfig();
 		
 		$('#chromestart')
 			.attr('checked', ChromeStart)
@@ -97,6 +152,16 @@ $(document).ready(
 			)
 		;
 
+		$('#nodeparams')
+			.val(NodeParams)
+			.change(
+				function() {
+					NodeParams = $(this).val();
+				}
+			)
+		;			
+		
+		
 		$('#nodestart')
 			.attr('checked', NodeStart)
 			.click(
@@ -108,11 +173,27 @@ $(document).ready(
 		
 		$('#restart').click(
 			function() {
+				var Type = $('#activetype').val();
+				
 				$('#console').html('&nbsp;');
-				WsClose();
+				
+				WsClose(Type);
 				
 				//NppRemoveAllBreakpoints();
-				StartChrome(ChromeUrl);
+				switch(Type) {
+					case 'NodeJs':
+						if (NodeUse) {
+							StartNode(NodeExePath, NodeScript, NodeParams);
+						}
+
+						break;
+					case 'Chrome':
+						if (ChromeUse) {
+							StartChrome(ChromeUrl);
+						}
+						
+						break;
+				}
 			}
 		);
 		
@@ -124,7 +205,7 @@ $(document).ready(
 		
 		$('#startevaluate').click(
 			function() {
-				ChromeEvaluate($('#evaluatestring').val());
+				Evaluate($('#evaluatestring').val());
 			}
 		);
 		
@@ -175,45 +256,27 @@ $(document).ready(
 		
 		$('#evaluatestring').on('keypress', function (e) {
 			if(e.which === 13){
-				ChromeEvaluate($('#evaluatestring').val());
+				Evaluate($('#evaluatestring').val());
 			}
+		});
+		
+		$('#activetype').on('change', function() {
+			ChangeActiveType($(this).val());
 		});
 		
 		NppRemoveAllBreakpoints();
 
 		NppGetOpenedFiles();
 
-		if (ChromeStart) {
+		if (NodeUse && NodeStart) {
+			StartNode(NodeExePath, NodeScript, NodeParams);
+		}
+		
+		if (ChromeUse && ChromeStart) {
 			StartChrome(ChromeUrl);
 		}
 		
 		document.focus();
-		
-		// Nodejs v7 test
-		/*
-		var AppWs2 = new WebSocket('ws://localhost:9229/node');
-
-		AppWs2.onopen = function (evt) {									
-			AppWs2.send('{"method": "Debugger.enable", "id": ' + GetCallId() + ', "params": {}}');
-			AppWs2.send('{"method": "Debugger.canSetScriptSource", "id": ' + GetCallId() + ', "params": {}}');
-			AppWs2.send('{"method": "Console.enable", "id": ' + GetCallId() + ', "params": {}}');
-			
-			Expression = 'console.log("Hallo daar")';
-			Expression = JSON.stringify(Expression);
-			
-			AppWs2.send('{"method":"Runtime.evaluate","params":{"expression":' + Expression + ',"objectGroup":"console","includeCommandLineAPI":true,"doNotPauseOnExceptions":false,"returnByValue":false},"id":' + GetCallId() + '}');
-
-		}
-
-		AppWs2.onerror = function (evt) {					
-			alert("WebSocket error: " + JSON.stringify(evt));
-		};
-
-		AppWs2.onmessage = function (evt) {
-			ConsoleLog(evt.data);
-		}
-		*/
-		// End test
 	}
 );
 
@@ -223,6 +286,7 @@ $(window).unload(
 		SaveConfig();
 		NppSetCaretLineBack(0);
 		ChromeStop();
+		NodeStop();
 	}
 );
 
@@ -240,26 +304,65 @@ function GetConfig() {
 	if (Config) {
 		Config = JSON.parse(Config);
 	
+		ChromeUse 	= Config.ChromeUse;
 		ChromeDir	= Config.ChromeDir;
 		ChromeUrl	= Config.ChromeUrl;
 		ChromeStart	= Config.ChromeStart;
-		NodeExePath = Config.NodeExePath;
-		NodeScript 	= Config.NodeScript;
+		NodeUse 	= Config.NodeUse;
+		NodeExePath	= Config.NodeExePath;
+		NodeParams	= Config.NodeParams;
+		NodeScript	= Config.NodeScript;
 		NodeStart 	= Config.NodeStart;
+		
+		if (Config.Breakpoints) {
+			Breakpoints	= Config.Breakpoints;
+		}
 	}
 }
 
 function SaveConfig() {
 	var Config = {
+		ChromeUse 		: ChromeUse,
 		ChromeUrl 		: ChromeUrl,
 		ChromeDir 		: ChromeDir,
 		ChromeStart 	: ChromeStart,
-		NodeExePath 	: NodeExePath,
-		NodeScript 		: NodeScript,
-		NodeStart 		: NodeStart
+		NodeUse 		: NodeUse,
+		NodeExePath		: NodeExePath,
+		NodeParams		: NodeParams,
+		NodeScript		: NodeScript,
+		NodeStart 		: NodeStart,
+		Breakpoints		: Breakpoints
 	}
 
 	FilePutContents('config.json', JSON.stringify(Config));
+}
+
+function SetNodeConfig() {
+	if ($('#nodeuse').attr('checked')) {
+		$('#nodeconfig').css('display', 'block');
+	} else {
+		$('#nodeconfig').css('display', 'none');
+	}
+}
+
+function SetChromeConfig() {
+	if ($('#chromeuse').attr('checked')) {
+		$('#chromeconfig').css('display', 'block');
+	} else {
+		$('#chromeconfig').css('display', 'none');
+	}
+}
+
+function SetNodeExeType() {
+	if ($('#nodeexepath').val().indexOf('://') > -1) {
+		NodeExeType = 'ws';
+		
+		$('#nodestart').attr('disabled', true);
+	} else {
+		NodeExeType = 'exe';
+		
+		$('#nodestart').attr('disabled', false);;
+	}
 }
 
 function OnChromeStarted(Url) {
@@ -274,63 +377,7 @@ function OnChromeStarted(Url) {
 							App = Data[AppNr]; 
 							
 							if (App.url == ChromeUrl) {
-								AppWs = new WebSocket(App.webSocketDebuggerUrl);
-
-								AppWs.onopen = function (evt) {									
-									WsSend('{"method": "Debugger.enable", "id": ' + GetCallId() + ', "params": {}}');
-									WsSend('{"method": "Debugger.canSetScriptSource", "id": ' + GetCallId() + ', "params": {}}');
-									WsSend('{"method": "Console.enable", "id": ' + GetCallId() + ', "params": {}}');
-
-									// Keep connection alive
-									setInterval(
-										function() {
-											if (AppWs && AppWs.send) { 
-												AppWs.send("");
-											}
-										}
-										,
-										5000
-									);
-								}
-
-								AppWs.onerror = function (evt) {					
-									//alert("WebSocket error: " + JSON.stringify(evt));
-								};
-
-								AppWs.onmessage = function (evt) {
-									var Data = JSON.parse(evt.data);
-
-									if (!Data.error) {
-										ToLog("\n=== Receive ======================================\n" + evt.data + "\n");
-									}
-
-									if (Data.method) {
-										switch (Data.method) {
-											case 'Debugger.scriptParsed':
-												ChromeAddScript(Data.params);
-
-												break;
-											case 'Debugger.paused':
-												ChromeHitBreakpoint(Data.params);
-
-												break;
-											case 'Console.messageAdded':
-												ConsoleMessage(Data.params);
-
-												break;
-										}
-									}
-
-									if (Data.id && Data.result && CallbackByCallId[Data.id]) {
-										CallbackByCallId[Data.id](Data.result);
-
-										delete CallbackByCallId[Data.id];
-									}
-								};
-
-								AppWs.onclose = function() { 
-								
-								};
+								OpenWsDebug('Chrome', App.webSocketDebuggerUrl);
 							}
 						}
 					}
@@ -343,48 +390,152 @@ function OnChromeStarted(Url) {
 	});
 }
 
+function OnNodeStarted(WsUrl, WorkingDirectory) {
+	NodeWorkingDirectory = WorkingDirectory;
+	
+	OpenWsDebug('NodeJs', WsUrl);
+}
+
+function OpenWsDebug(Type, WsUrl) {
+	if (!AppWs[Type]) {
+		AppWs[Type] = {};
+	}
+	
+	ActiveTypes[Type] = true;
+	
+	$('#activetype option:contains("' + Type + '")').text(Type + '  (running)');
+	$('#activetype').val(Type);
+	
+	AppWs[Type] = new WebSocket(WsUrl);
+
+	AppWs[Type].onopen = function (evt) {									
+		WsSend(Type, '{"method": "Debugger.enable", "id": ' + GetCallId() + ', "params": {}}');
+		WsSend(Type, '{"method": "Debugger.canSetScriptSource", "id": ' + GetCallId() + ', "params": {}}');
+		WsSend(Type, '{"method": "Console.enable", "id": ' + GetCallId() + ', "params": {}}');
+
+		// Keep connection alive
+		setInterval(
+			function() {
+				if (AppWs[Type] && AppWs[Type].send) { 
+					AppWs[Type].send(Type, "");
+				}
+			}
+			,
+			5000
+		);
+	}
+
+	AppWs[Type].onerror = function (evt) {					
+		//alert("WebSocket error: " + JSON.stringify(evt));
+	};
+
+	AppWs[Type].onmessage = function (evt) {
+		var Data = JSON.parse(evt.data);
+
+		if (!Data.error) {
+			ToLog("\n=== Receive ======================================\n" + Type + ": " + evt.data + "\n");
+		}
+
+		if (Data.method) {
+			switch (Data.method) {
+				case 'Debugger.scriptParsed':
+					AddScript(Type, Data.params);
+
+					break;
+				case 'Debugger.paused':
+					HitBreakpoint(Type, Data.params);
+
+					break;
+				case 'Console.messageAdded':
+					ConsoleMessage(Type, Data.params);
+
+					break;
+			}
+		}
+
+		if (Data.id && Data.result && CallbackByCallId[Data.id]) {
+			CallbackByCallId[Data.id].Func(Data.result, CallbackByCallId[Data.id].Data);
+
+			delete CallbackByCallId[Data.id];
+		}
+	};
+
+	AppWs[Type].onclose = function() { 
+		$('#activetype option:contains("' + Type + '")').text(Type);
+		
+		delete AppWs[Type];
+		AppWs[Type] = null;
+	};
+}
+
 function StartSearch() {
 	ShowFiles($('#searchstring').val(), $('#matchcase').attr('checked') ? true : false);
 }
 
-function WsSend(Message) {
-	ToLog("\n=== Send ======================================\n" + Message + "\n");
-	
-	AppWs.send(Message);
+function WsSend(Type, Message) {
+	if (AppWs[Type]) {
+		ToLog("\n=== Send ======================================\n" + Type + ": " + Message + "\n");
+		
+		AppWs[Type].send(Message);
+	}
 }
 
-function WsClose() {
-	if (AppWs && AppWs.close) {
-		AppWs.close();
+function WsClose(Type /*optional*/) {
+	var Type_,
+	Close =	function(Type) {
+				if (AppWs[Type] && AppWs[Type].close) {
+					AppWs[Type].close();
 
-		AppWs = null;
+					AppWs[Type] = null;
+				}
+			}
+	;
+	
+	if (Type) {
+		Close(Type);
+	} else {
+		for (Type_ in AppWs) {
+			Close(Type_);
+		}
 	}
 }
 
 function SetOpenedFiles() {
-	var Index, FilePath, File, Md5, CurrentFiles = {};
+	var Index, FilePath, File, Md5, Type, LineNr,
+	BreakpointsRemove = {};
 
+	NppFiles = {};
+	
 	for (Index=0; Index < arguments.length - 1; Index+=2) {
 		FilePath = arguments[Index];
 
-		if (FilePath.toLowerCase().indexOf(ChromeDir.toLowerCase()) > -1) {
-			File		= AddFile(FilePath);
+		
+		NppFiles[GetHash(FilePath)] = arguments[Index + 1];
+	}
+		
+	for (Hash in AppFiles) {		
+		if (NppFiles[Hash]) {
+			File		= AppFiles[Hash];
 			File.Opened	= true;
-			Md5			= arguments[Index + 1];
+			Md5			= NppFiles[Hash];
 			
-			if (Md5 && File.Md5 && Md5 != File.Md5) {
+			if (Md5 && File.Md5 && Md5 != File.Md5) {	
 				FileChanged(File);
 			}
 			
 			File.Md5 = Md5;
-			
-			CurrentFiles[GetHash(FilePath)] = true;
-		}
-	}
-
-	for (Hash in AppFiles) {
-		if (!CurrentFiles[Hash]) {
+		} else {
 			AppFiles[Hash].Opened = false;
+			
+			if (Breakpoints[Hash]) {
+				for (Type in Breakpoints[Hash]) {
+					for (LineNr in Breakpoints[Hash][Type]) {
+						AddRemoveBreakpoint(AppFiles[Hash].FilePath, LineNr, false, true);
+					}
+				}
+				
+				delete Breakpoints[Hash];
+			}
 		}
 	}
 
@@ -392,7 +543,7 @@ function SetOpenedFiles() {
 }
 
 function FileChanged(File) {
-	ChromeSetScriptSource(File);
+	SetScriptSource(File);
 }
 
 function ShowFiles(SearchString /* optional */, MatchCase /* optional */) {
@@ -418,7 +569,11 @@ function ShowFiles(SearchString /* optional */, MatchCase /* optional */) {
 		}
 		
 		if (Add) {
-			RelPath = File.FilePath.replaceAll(ChromeDir, "");
+			RelPath = File.FilePath;
+			
+			if (ChromeUse) {
+				RelPath = RelPath.replaceAll(ChromeDir, "");
+			}
 
 			Parts	= RelPath.split('\\');
 			MaxIndex= Parts.length - 1;
@@ -438,9 +593,10 @@ function ShowFiles(SearchString /* optional */, MatchCase /* optional */) {
 	}
 	
 	TreeContent = function(Dir, Level) {
-		var i, Hash, Item,
+		var i, Hash, Item, Type,
 		NameSort	= [],
-		Spaces		= "";
+		Spaces		= "",
+		LineNrs		= {};
 
 		for (i=0; i < 4*Level; i++) {
 			Spaces += "&nbsp;";
@@ -468,9 +624,17 @@ function ShowFiles(SearchString /* optional */, MatchCase /* optional */) {
 						Info += '&nbsp;&nbsp;<span style="text-decoration: underline; cursor: pointer; " onclick="GoToLine(\'' +  Hash + '\', ' + LineNr + ')">' + LineNr + '</span>';
 					}
 				} else {
-					if (Breakpoints[ Hash]) {
-						for (LineNr in Breakpoints[Hash]) {
-							Info += '&nbsp;&nbsp;<img src="images/breakpoint.bmp" title="Line: ' + LineNr + '" onclick="GoToLine(\'' +  Hash + '\', ' + LineNr + ')" style="cursor: pointer; " />';
+					if (Breakpoints[Hash]) {
+						LineNrs = {};
+						
+						for (Type in Breakpoints[Hash]) {
+							for (LineNr in Breakpoints[Hash][Type]) {
+								LineNrs[LineNr] = true;
+							}
+							
+							for (LineNr in LineNrs) {
+								Info += '&nbsp;&nbsp;<img src="images/breakpoint.bmp" title="Line: ' + LineNr + '" onclick="GoToLine(\'' +  Hash + '\', ' + LineNr + ')" style="cursor: pointer; " />';
+							}
 						}
 					}
 				}
@@ -493,11 +657,11 @@ function GoToLine(Hash, LineNr) {
 	NppGotoLine(LineNr);
 }
 
-function GetFileByScriptId(ScriptId) {
+function GetFileByScriptId(Type, ScriptId) {
 	var File = null;
 
 	for (Hash in AppFiles) {
-		if (AppFiles[Hash].ScriptIds[ScriptId]) {
+		if (AppFiles[Hash].ScriptIds[Type] && AppFiles[Hash].ScriptIds[Type][ScriptId]) {
 			File = AppFiles[Hash];
 
 			break;
@@ -508,19 +672,25 @@ function GetFileByScriptId(ScriptId) {
 }
 
 function ToLog(Content) {
-	FilePutContents('log.txt', Content, AppendToLog);
+	if (LOG_ENABLED) {
+		FilePutContents('log.txt', Content, AppendToLog);
+	}
 	
 	if (!AppendToLog) {
 		AppendToLog = true;
 	}
 }
 
-function FilePutContents(FilePath, Content, Append /*=false*/) {
+function FilePutContents(FilePath, Content, Append /*=false*/, RealPath /*=false*/) {
 	if (!Append) {
 		Append = false;
 	}
 	
-	window.external.FilePutContents(FilePath, Content, Append);
+	if (!RealPath) {
+		RealPath = false;
+	}
+	
+	window.external.FilePutContents(FilePath, Content, Append, RealPath);
 }
 
 function FileGetContents(FilePath, RealPath) {
@@ -547,7 +717,7 @@ function SelectTab(Name) {
 	$('#tabs a[href="#' + Name + '"]').click();
 }
 
-function ConsoleMessage(Params) {
+function ConsoleMessage(Type, Params) {
 	var CallFrames, Text;
 	
 	if (Params.message && Params.message.text) {
@@ -562,7 +732,7 @@ function ConsoleMessage(Params) {
 					
 					break;
 				case "object": //
-					Text = '<span style="text-decoration: underline; cursor: pointer; " onclick=\'ChromeGetProperties(JSON.stringify(\"' + Params.message.parameters[0].objectId.replaceAll('"', '\\"') +  '\"), true); SelectTab("watch"); \'>' + Params.message.parameters[0].description + '</span>';
+					Text = '<span style="text-decoration: underline; cursor: pointer; " onclick=\'GetProperties("' + Type + '", JSON.stringify(\"' + Params.message.parameters[0].objectId.replaceAll('"', '\\"') +  '\"), true); SelectTab("watch"); \'>' + Params.message.parameters[0].description + '</span>';
 					
 					break;	
 			}
@@ -574,11 +744,13 @@ function ConsoleMessage(Params) {
 			Text = '<span style="color: red;">' + Text + '</span>';
 		}
 		
-		ConsoleLog(Text, CallFrames);
+		Text = '<span style="color: gainsboro; width: 150px;">' + Type + '</span>' + ': ' + Text;
+		
+		ConsoleLog(Text, Type, CallFrames);
 	}
 }
 
-function ConsoleLog(Message, CallFrames /*optional*/) {
+function ConsoleLog(Message, Type  /*optional*/, CallFrames /*optional*/) {
 	var File, Parts, ScriptId, LineNr, Index, Display,
 	Id			= 'consoleline' + ConsoleLineNr,
 	FileLineMenu= '',
@@ -588,7 +760,7 @@ function ConsoleLog(Message, CallFrames /*optional*/) {
 		for (Index in CallFrames) {
 			ScriptId= CallFrames[Index].scriptId;
 			LineNr	= CallFrames[Index].lineNumber;
-			File	= GetFileByScriptId(ScriptId);
+			File	= GetFileByScriptId(Type, ScriptId);
 			
 			if (File) {
 				Parts = File.FilePath.split('\\');
@@ -615,6 +787,16 @@ function ConsoleLog(Message, CallFrames /*optional*/) {
 	$( "#" + Id).menu();
 }
 
+function ChangeActiveType(Type) {
+	var ActiveType = ActiveTypes[Type];
+	
+	if (ActiveType && ActiveType !== true) {
+		HitBreakpoint(Type);
+	} else {
+		Resume();
+	}
+}
+
 function AddFile(FilePath) {
 	var Hash = GetHash(FilePath);
 
@@ -627,6 +809,11 @@ function AddFile(FilePath) {
 			Opened		: false,
 			ScriptIds 	: {}
 		};
+		
+		if (NppFiles[Hash]) {
+			AppFiles[Hash].Md5		= NppFiles[Hash];
+			AppFiles[Hash].Opened	= true;
+		}
 	}
 
 	return AppFiles[Hash];
@@ -666,6 +853,10 @@ function SetTarget(Target, Value) {
 			ChromeDir = Value;
 			
 			break;
+		case '#chromeurl':
+			ChromeUrl = Value;
+			
+			break;	
 		case '#nodescript':
 			NodeScript = Value;
 			
@@ -673,18 +864,16 @@ function SetTarget(Target, Value) {
 		case '#nodeexepath':
 			NodeExePath = Value;
 			
+			$(Target).val(Value);
+			
+			SetNodeExeType();
+			
 			break;
 	}
 	
 	
 	$(Target).val(Value);
 }
-
-function SetChromeUrl(Url) {
-	ChromeUrl = Url;
-	
-	$('#chromeurl').val(Url);
-}	
 
 // Npp ==========================================================================================================
 var NPP = {
@@ -695,10 +884,12 @@ var NPP = {
 function NppActivateDoc(Hash) {
 	var File = AppFiles[Hash];
 
-	if (File.Opened) {
-		window.external.NppActivateDoc(File.FilePath);
-	} else {
-		NppOpenFile(File.FilePath);
+	if (File) {
+		if (File.Opened) {
+			window.external.NppActivateDoc(File.FilePath);
+		} else {
+			NppOpenFile(File.FilePath);
+		}
 	}
 }
 
@@ -750,7 +941,7 @@ function NppGetCurrentFile() {
 	return window.external.NppGetCurrentFile();
 }
 
-// Chrome debugger functions https://chromedevtools.github.io/debugger-protocol-viewer/1-1/Debugger/#method-resume
+// Chrome debugger functions https://chromedevtools.github.io/debugger-protocol-viewer/
 
 function StartChrome(Url) {
 	window.external.ChromeStart(Url);
@@ -760,67 +951,164 @@ function ChromeStop() {
 	window.external.ChromeStop();
 }
 
-function ChromeAddScript(Params) {
-	var FilePath, File, LineNr;
+function StartNode(ExePath, Script, Params) {
+	if (NodeExeType == 'exe') {
+		window.external.NodeStart(ExePath, Script, Params);
+	} else {
+		OnNodeStarted(NodeExePath);
+	}
+}
+
+function NodeStop() {
+	if (NodeExeType == 'exe') {
+		window.external.NodeStop();
+	}
+}
+
+
+function AddScript(Type, Params) {
+	var FilePath, File, LineNr, CurrentFile, IsIndex,
+	IsIndex	= false,
+	Add		= true;
 	
 	if (Params.url) {
-		FilePath	= Params.url.split('?')[0].replaceAll(ChromeUrl, ChromeDir).replace(new RegExp('/', 'g'), '\\');
-		File		= AddFile(FilePath)
-		File.Url	= Params.url;
+		FilePath	= Params.url
 		
-		File.ScriptIds[Params.scriptId] = true;
+		switch (Type) {
+			case 'Chrome':
+				if (FilePath == ChromeUrl) {
+					IsIndex = true;
+				}
+				
+				FilePath = FilePath.split('?')[0].replaceAll(ChromeUrl, ChromeDir).replace(new RegExp('/', 'g'), '\\');
+				
+				if (IsIndex) {
+					FilePath = window.external.FileSearch(FilePath, "index.*");
+				}
+				
+				break;
+			case 'NodeJs':
+				if (FilePath.indexOf(':') == -1) {	
+					FilePath = window.external.ToAbsolutePath(NodeWorkingDirectory, FilePath);
+				} else {
+					// Exclude files in node_modules
+					if (FilePath.indexOf('node_modules') > -1) {
+						Add = false;
+					}
+				}
+				
+				if (Add) {
+					if (!window.external.FileExists(FilePath)) {
+						Add = false;	
+					}
+				}
+				
+				break;
+		}
 		
-		// Reset breakpoints
-		for (LineNr in Breakpoints[File.Hash]) {
-			ChromeAddRemoveBreakpoint(FilePath, LineNr, true, true);
+		if (Add) {
+			File		= AddFile(FilePath)
+			File.Url	= Params.url;
+			
+			if (!File.ScriptIds[Type]) {
+				File.ScriptIds[Type] = {};
+			}
+			
+			File.ScriptIds[Type][Params.scriptId] = true;
+			
+			// Reset breakpoints
+			if (Breakpoints[File.Hash]) {
+				for (LineNr in Breakpoints[File.Hash][Type]) {
+					CurrentFile = NppGetCurrentFile();
+					
+					NppActivateDoc(File.Hash);				
+					NppAddMarker(LineNr - 1, NPP.MARKER_BREAK);
+					window.external.NppActivateDoc(CurrentFile);
+					
+					AddRemoveBreakpoint(FilePath, LineNr, true, true);
+				}
+			}
 		}
 	}
 }
 
-function ChromeAddRemoveBreakpoint(FilePath, LineNr, Add, NoCallback) {
-	var Url, Id,
+function AddRemoveBreakpoint(FilePath, LineNr, Add, NoCallback) {
+	var Url, Id, Type, ScriptId,
 	File = GetFileByPath(FilePath);
 
 	if (File) {
-		Id 	= GetCallId();
+		for (Type in ActiveTypes) {
+			if (!Breakpoints[File.Hash]) {
+				Breakpoints[File.Hash] = {};
+			}
 
-		if (!Breakpoints[File.Hash]) {
-			Breakpoints[File.Hash] = {};
-		}
-
-		if (Add) {
-			if (!NoCallback) {
-				CallbackByCallId[Id] = function(Result) {				
-					NppAddMarker(LineNr-1, NPP.MARKER_BREAK);
-					Breakpoints[File.Hash][LineNr] = Result.breakpointId;
-					
-					ShowFiles();
-				}
+			if (!Breakpoints[File.Hash][Type]) {
+				Breakpoints[File.Hash][Type] = {};
 			}
 			
-			WsSend('{"method": "Debugger.setBreakpointByUrl", "id": ' + Id + ', "params": {"lineNumber": ' + (LineNr-1) + ', "url": "' + File.Url + '", "condition": "", "columnNumber": 0}}');
-		} else {
-			if (!NoCallback) {
-				CallbackByCallId[Id] = function(Result) {
-					NppDeleteMarker(LineNr-1, NPP.MARKER_BREAK);
-
-					delete Breakpoints[File.Hash][LineNr];
+			if (Add) {
+				if (File.ScriptIds[Type]) { 
+					for (ScriptId in File.ScriptIds[Type]) {
+						Id 	= GetCallId();
+						
+						if (!NoCallback) {
+							CallbackByCallId[Id] = {
+								Func:	function(Result) {								
+											NppAddMarker(LineNr-1, NPP.MARKER_BREAK);
 					
-					ShowFiles();
+											Breakpoints[File.Hash][arguments[1].Type][LineNr] = Result.breakpointId;
+							
+											ShowFiles();
+										}
+										,
+								Data:	{Type: Type}
+							}
+						}
+	
+						//WsSend('Chrome', '{"method": "Debugger.setBreakpointByUrl", "id": ' + Id + ', "params": {"lineNumber": ' + (LineNr-1) + ', "url": "' + File.Url + '", "condition": "", "columnNumber": 0}}');
+						WsSend(Type, '{"method": "Debugger.setBreakpoint", "id": ' + Id + ', "params": {"location":{"scriptId": "' + ScriptId + '","lineNumber": ' + (LineNr-1) + ', "columnNumber": 0}, "condition": ""}}');
+					}
+				}
+			} else {
+				for (Type in Breakpoints[File.Hash]) {
+					if (Breakpoints[File.Hash][Type][LineNr]) {
+						Id 	= GetCallId();
+						
+						if (!NoCallback) {
+							CallbackByCallId[Id] = {
+								Func:	function(Result) {
+											NppDeleteMarker(LineNr-1, NPP.MARKER_BREAK);
+
+											delete Breakpoints[File.Hash][arguments[1].Type][LineNr];
+								
+											ShowFiles();
+										}
+										,
+								Data:	{Type: Type}
+							}
+						}
+						
+						WsSend(Type, '{"method": "Debugger.removeBreakpoint", "id": ' + Id + ', "params": {"breakpointId": "' + Breakpoints[File.Hash][Type][LineNr] + '"}}');
+					}
 				}
 			}
-			
-			WsSend('{"method": "Debugger.removeBreakpoint", "id": ' + Id + ', "params": {"breakpointId": "' + Breakpoints[File.Hash][LineNr] + '"}}');
 		}
 	}
 }
 
-function ChromeHitBreakpoint(Params) {
-	var
-	LineNr	= Params.callFrames[0].location.lineNumber,
-	File	= GetFileByScriptId(Params.callFrames[0].location.scriptId);
+function HitBreakpoint(Type, Params /*optional*/) {
+	var LineNr, File;
+	
+	if (Params) {
+		ActiveTypes[Type] = Params;
+	} else {
+		Params = ActiveTypes[Type];
+	}
+	
+	LineNr	= Params.callFrames[0].location.lineNumber;
+	File	= GetFileByScriptId(Type, Params.callFrames[0].location.scriptId);
 
-	//ConsoleLog(JSON.stringify(Params));
+	$('#activetype').val(Type);
 	
 	CurrentBreakpoint = Params;
 	
@@ -837,13 +1125,13 @@ function ChromeHitBreakpoint(Params) {
 		
 		SelectTab('watch');
 	} else {
-		ChromeResume();
+		Resume();
 	}
 	
-	ChromeGetScopeVars(0);
+	GetScopeVars(Type, 0);
 }
 
-function ChromeGetScopeVars(CallFrameIndex) {
+function GetScopeVars(Type, CallFrameIndex) {
 	var Index1, Index2, CallFrame, Scope, FileInfo, File;
 	
 	$('#watchresult').html('');
@@ -858,18 +1146,28 @@ function ChromeGetScopeVars(CallFrameIndex) {
 				if (Scope.type == 'local') {
 					FileInfo = '<span>&nbsp;</span>';
 					
-					File = GetFileByScriptId(CallFrame.location.scriptId);
-					
+					File = GetFileByScriptId(Type, CallFrame.location.scriptId);
+
 					if (File) {
 						FileInfo = '<span style="position: relative; left: 20px; color: gray; cursor: pointer;" onclick="GoToLine(\'' + File.Hash + '\', ' + (CallFrame.location.lineNumber + 1) + ')">(' + File.Url.replace(ChromeUrl, '') + ':' + (CallFrame.location.lineNumber + 1) + ')</span>';
 					}
 
-					Text = '<span style="cursor: pointer; " onclick=\'ChromeGetProperties(JSON.stringify(\"' + CallFrame.this.objectId.replaceAll('"', '\\"') +  '\"))\'>' + CallFrame.this.description + '</span>.<span style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().next().css("display") == "none") ? ChromeGetProperties(JSON.stringify(\"' + Scope.object.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next().next()) : $(this).next().next().css("display", "none")\'>' + Scope.name + '</span>' + FileInfo + '<div name="scopechain:' + Index1 + ':' + Index2 + '" style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
+					Text = '';
+					
+					if (CallFrame.this && CallFrame.this.objectId) {
+						Text = '<span style="cursor: pointer; " onclick=\'GetProperties("' + Type + '", JSON.stringify(\"' + CallFrame.this.objectId.replaceAll('"', '\\"') +  '\"))\'>' + CallFrame.this.description + '</span>.';
+					} else {
+						if (CallFrame.this.description) {
+							Text = CallFrame.this.description + '.';
+						}
+					}
+					
+					Text += '<span style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().next().css("display") == "none") ? GetProperties("' + Type + '", JSON.stringify(\"' + Scope.object.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next().next()) : $(this).next().next().css("display", "none")\'>' + Scope.name + '</span>' + FileInfo + '<div name="scopechain:' + Index1 + ':' + Index2 + '" style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
 					
 					$('#watchresult').append(Text);
 
 					if (Index1 == 0) {				
-						ChromeGetProperties(JSON.stringify(Scope.object.objectId), true, $('#watchresult').find('div[name="scopechain:' + Index1 + ':' + Index2 + '"]'));
+						GetProperties(Type, JSON.stringify(Scope.object.objectId), true, $('#watchresult').find('div[name="scopechain:' + Index1 + ':' + Index2 + '"]'));
 					}
 				}
 			}
@@ -877,7 +1175,7 @@ function ChromeGetScopeVars(CallFrameIndex) {
 	}
 }
 
-function ChromeGetProperties(ObjectId, ClearEvalString, AppendTo) {
+function GetProperties(Type, ObjectId, ClearEvalString, AppendTo) {
 	var Id = GetCallId();
 
 	if (ClearEvalString) {
@@ -890,14 +1188,18 @@ function ChromeGetProperties(ObjectId, ClearEvalString, AppendTo) {
 	
 	AppendTo.css('display', 'block');
 	
-	CallbackByCallId[Id] =	function(Result) {
-		ChromeReceiveProperties(Result, AppendTo);
+	CallbackByCallId[Id] = {
+		Func:	function(Result) {								
+					ReceiveProperties(arguments[1].Type, Result, AppendTo);
+				}
+				,
+		Data:	{Type: Type}
 	}
-
-	WsSend('{"params": {"ownProperties": true, "objectId": ' + ObjectId + '}, "method": "Runtime.getProperties", "id": ' + Id + '}');	
+	
+	WsSend(Type, '{"params": {"ownProperties": true, "objectId": ' + ObjectId + '}, "method": "Runtime.getProperties", "id": ' + Id + '}');	
 }
 
-function ChromeReceiveProperties(Result, AppendTo) {
+function ReceiveProperties(Type, Result, AppendTo) {
 	var Index, Item, Text, Value, Name,
 	NameIndex	= {},
 	NameSort 	= [];
@@ -913,14 +1215,11 @@ function ChromeReceiveProperties(Result, AppendTo) {
 		}
 	}
 	
-	//ConsoleLog(JSON.stringify(NameSort.sort()));
-	//ConsoleLog(JSON.stringify(NameIndex));
-	
 	for (Index in NameSort.sort()) {
 		Item = Result.result[NameIndex[NameSort[Index]]];
 		
 		if (Item.value.type == 'object' && Item.value.objectId) {
-			Text = '<span class="SelectedLine" style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().css("display") == "none") ? ChromeGetProperties(JSON.stringify(\"' + Item.value.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next()) : $(this).next().css("display", "none")\'>' + Item.name + '<span style="position: absolute; left: 300px; color: gray;">' + Item.value.className + '</span></span><div style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
+			Text = '<span class="SelectedLine" style="text-decoration: underline; cursor: pointer; " onclick=\'($(this).next().css("display") == "none") ? GetProperties("' + Type + '", JSON.stringify(\"' + Item.value.objectId.replaceAll('"', '\\"') +  '\"), true, $(this).next()) : $(this).next().css("display", "none")\'>' + Item.name + '<span style="position: absolute; left: 300px; color: gray;">' + Item.value.className + '</span></span><div style="position: relative; left: 50px; display: none;">&nbsp;</div><br />';
 		} else {
 			if (Item.value.type == 'function') {
 				Value = Item.value.description;
@@ -935,60 +1234,112 @@ function ChromeReceiveProperties(Result, AppendTo) {
 	}		
 }
 
-function ChromePause() {
-	WsSend('{"method": "Debugger.pause", "id": ' + GetCallId() + ', "params": {}}');
+function Pause() {
+	WsSend($('#activetype').val(), '{"method": "Debugger.pause", "id": ' + GetCallId() + ', "params": {}}');
 }
 
-function ChromeResume() {
+function Resume() {
+	var Type = $('#activetype').val();
+	
 	CleanUpDebugStep();
 
 	$('#debugger_inactive').css('display', 'block');
 	$('#debugger_active').css('display', 'none');
 	$('#watchresult').html('&nbsp;');
 	
-	WsSend('{"method": "Debugger.resume", "id": ' + GetCallId() + ', "params": {}}');
-}
-
-function ChromeStepInto() {
-	CleanUpDebugStep();
-
-	WsSend('{"method": "Debugger.stepInto", "id": ' + GetCallId() + ', "params": {}}');
-}
-
-function ChromeStepOver() {
-	CleanUpDebugStep();
-
-	WsSend('{"method": "Debugger.stepOver", "id": ' + GetCallId() + ', "params": {}}');
-}
-
-function ChromeStepOut() {
-	CleanUpDebugStep();
-
-	WsSend('{"method": "Debugger.stepOut", "id": ' + GetCallId() + ', "params": {}}');
-}
-
-function ChromeEvaluate(Expression) {
-	//{"id":3,"result":{"result":{"type":"object","subtype":"node","className":"HTMLDocument","description":"#document","objectId":"{\"injectedScriptId\":1,\"id\":1}"},"wasThrown":false}}
-	var Id = GetCallId();
+	WsSend(Type, '{"method": "Debugger.resume", "id": ' + GetCallId() + ', "params": {}}');
 	
-	CallbackByCallId[Id] = function(Result) {				
-		if (Result.result && Result.result.objectId) {
-			ChromeGetProperties(JSON.stringify(Result.result.objectId));
-		}
+	ActiveTypes[Type] = true;
+}
+
+function StepInto() {
+	CleanUpDebugStep();
+
+	WsSend($('#activetype').val(), '{"method": "Debugger.stepInto", "id": ' + GetCallId() + ', "params": {}}');
+}
+
+function StepOver() {
+	CleanUpDebugStep();
+
+	WsSend($('#activetype').val(), '{"method": "Debugger.stepOver", "id": ' + GetCallId() + ', "params": {}}');
+}
+
+function StepOut() {
+	CleanUpDebugStep();
+
+	WsSend($('#activetype').val(), '{"method": "Debugger.stepOut", "id": ' + GetCallId() + ', "params": {}}');
+}
+
+function Evaluate(Expression) {
+	//{"id":3,"result":{"result":{"type":"object","subtype":"node","className":"HTMLDocument","description":"#document","objectId":"{\"injectedScriptId\":1,\"id\":1}"},"wasThrown":false}}
+	var Id	= GetCallId(),
+	Type	= $('#activetype').val();
+		
+	CallbackByCallId[Id] = {
+		Func:	function(Result) {								
+					if (Result.result && Result.result.objectId) {
+						GetProperties(arguments[1].Type, JSON.stringify(Result.result.objectId));
+					}
+				}
+				,
+		Data:	{Type: Type}
 	}
 	
 	Expression = JSON.stringify(Expression);
 			
-	WsSend('{"method":"Runtime.evaluate","params":{"expression":' + Expression + ',"objectGroup":"console","includeCommandLineAPI":true,"doNotPauseOnExceptions":false,"returnByValue":false},"id":' + Id + '}');
+	WsSend(Type, '{"method":"Runtime.evaluate","params":{"expression":' + Expression + ',"objectGroup":"console","includeCommandLineAPI":true,"doNotPauseOnExceptions":false,"returnByValue":false},"id":' + Id + '}');
 }
 
-function ChromeSetScriptSource(File) {
-	var ScriptId, Id,
+function SetScriptSource(File) {
+	var ScriptId, Id, Type,
 	Content = JSON.stringify(FileGetContents(File.FilePath, true));
 
-	for (ScriptId in File.ScriptIds) {
-		Id = GetCallId();
+	for (Type in File.ScriptIds) {
+		for (ScriptId in File.ScriptIds[Type]) {
+			Id = GetCallId();
 		
-		WsSend('{"method": "Debugger.setScriptSource","id": ' + Id + ',"params": {"scriptSource": ' + Content + ',"scriptId": "' + ScriptId + '"}}');
+			WsSend(Type, '{"method": "Debugger.setScriptSource","id": ' + Id + ',"params": {"scriptSource": ' + Content + ',"scriptId": "' + ScriptId + '"}}');
+		}
+	}
+}
+
+// Tmp
+
+function ReplaceConst() {
+	var i, Hash, Content, Md1, Md2,
+	Replace = [
+		'WINDOW_MODE',
+		'VIEW_MODE',
+		'COMPONENT_MODE',
+		'UNDO_MODE',
+		'EVENT_HANDLER',
+		'DESIGN_COLORS',
+		'COMPONENT_TYPE',
+		'PROP_TYPE',
+		'DIRTY_TYPE',
+		'LOG_LEVEL',
+		'CONNECTION_STATUS',
+		'LIBRARY_EXEC_STATUS',
+		'LIBRARY_ARGUMENT_TYPE',
+		'VARIABLE_DEPENDENCY_TYPE',
+		'ADD_DESIGNCLASS_OFFSET',
+		'UNDO_RECORDING_MAX_ACTIONS',
+		'GARBAGE_COLLECT_INTERVAL'
+	];
+	
+	for (Hash in AppFiles) {
+		Content = FileGetContents(AppFiles[Hash].FilePath, true);
+		
+		Md1 = GetHash(Content);
+		
+		for (i in Replace) {
+			Content = Content.replaceAll(Replace[i], 'CONST.' + Replace[i]);
+		}
+		
+		Md2 = GetHash(Content);
+		
+		if (Md1 != Md2) {
+			FilePutContents(AppFiles[Hash].FilePath, Content, false, true);
+		}
 	}
 }	

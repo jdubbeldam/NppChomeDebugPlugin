@@ -159,6 +159,8 @@ namespace NppChomeDebugPlugin
         public static void NppAddMarker(int LineNr, int Marker = MARKER_BREAK)
         {
             //Win32.SendMessage(PluginBase.GetCurrentScintilla(), SciMsg.SCI_MARKERSETBACK, Marker, 0xff0000);
+            InitMarkers();
+
             Win32.SendMessage(PluginBase.GetCurrentScintilla(), SciMsg.SCI_MARKERADD, LineNr, Marker);
         }
 

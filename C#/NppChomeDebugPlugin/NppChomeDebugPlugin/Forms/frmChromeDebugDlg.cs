@@ -107,7 +107,7 @@ namespace NppChomeDebugPlugin
     public class JavascriptFunctions
     {
         private WebBrowser Browser;
-        private Process ChromeProc;
+        private Process ChromeProc, NodeProc;
 
         public JavascriptFunctions(WebBrowser Browser)
         {
@@ -131,7 +131,7 @@ namespace NppChomeDebugPlugin
                 {
                     ChromeProc = Process.GetProcessById(Convert.ToInt32(Item["ProcessId"]));
 
-                    ChromeStop();
+                    ProcStop(ChromeProc);
 
                     Thread.Sleep(200);
 
@@ -141,7 +141,7 @@ namespace NppChomeDebugPlugin
                 }
             }
 
-            // Start Chrome if process does not already exist
+            // Start Chrome if process
             if (ChromeProc == null)
             {
                 string ChromePath = (string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe", "", "");
@@ -158,6 +158,57 @@ namespace NppChomeDebugPlugin
                 Thread.Sleep(200);
 
                 Browser.Document.InvokeScript("OnChromeStarted", new Object[] { "http://127.0.0.1:9222/json/list" });
+            }
+        }
+
+        public void NodeStart(string NodeExePath, string Script, string Params)
+        {
+            ProcessStartInfo ProcInfo;
+            FileInfo NodeExeInfo = new FileInfo(NodeExePath);
+            FileInfo ScriptInfo = new FileInfo(Script);
+            
+            bool IsOpen = false;
+
+            NodeProc = null;
+            
+            // Check if Chrome process is already available
+            string WmiQuery = "select ProcessId, CommandLine from Win32_Process where Name='" + NodeExeInfo.Name + "'";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(WmiQuery);
+            ManagementObjectCollection ObjectCollection = searcher.Get();
+
+            foreach (ManagementObject Item in ObjectCollection)
+            {
+                if (Item["CommandLine"].ToString().Contains("--inspect=9229"))
+                {
+                    NodeProc = Process.GetProcessById(Convert.ToInt32(Item["ProcessId"]));
+
+                    ProcStop(NodeProc);
+
+                    Thread.Sleep(200);
+
+                    NodeProc = null;
+
+                    break;
+                }
+            }
+
+            // Start NodeJs if process
+            if (NodeProc == null)
+            {
+                ProcInfo = new ProcessStartInfo(NodeExePath, "--inspect=9229 " + ScriptInfo.Name + " " + Params); // --debug-brk 
+                ProcInfo.WorkingDirectory = ScriptInfo.DirectoryName;
+                NodeProc = Process.Start(ProcInfo);
+            }
+
+            Thread.Sleep(200);
+
+            IsOpen = IsPortOpen("127.0.0.1", 9229, 30);
+
+            if (IsOpen)
+            {
+                Thread.Sleep(200);
+
+                Browser.Document.InvokeScript("OnNodeStarted", new Object[] { "ws://127.0.0.1:9229/node", ScriptInfo.DirectoryName });
             }
         }
 
@@ -192,17 +243,43 @@ namespace NppChomeDebugPlugin
 
         public void ChromeStop()
         {
-            if (ChromeProc != null)
+            ProcStop(ChromeProc);
+        }
+
+        public void NodeStop()
+        {
+            ProcStop(NodeProc);
+        }
+
+        public void ProcStop(Process Proc)
+        {
+            try
             {
-                if (ChromeProc.CloseMainWindow())
+                if (Proc != null)
                 {
-                    ChromeProc.WaitForExit(2000);
-                }
-                else
-                {
-                    ChromeProc.Kill();
+                    if (Proc.CloseMainWindow())
+                    {
+                        Proc.WaitForExit(2000);
+                    }
+                    else
+                    {
+                        Proc.Kill();
+                    }
                 }
             }
+            catch { }
+        }
+
+        public string FileSearch(string FileDir, string Search)
+        {
+            string[] Files = Directory.GetFiles(FileDir, Search);
+
+            foreach (string FileName in Files)
+            {
+                return FileName;
+            }
+
+            return "";
         }
 
         public string FileSearchForContent(string FilePath, string SearchString, bool MatchCase = true)
@@ -258,9 +335,12 @@ namespace NppChomeDebugPlugin
             }
         }
 
-        public void FilePutContents(string FilePath, string Contents, bool Append = false)
+        public void FilePutContents(string FilePath, string Contents, bool Append = false, bool RealPath = false)
         {
-            FilePath = Main.DllPath + "/ChromeDebug/" + FilePath.Replace("..", "");
+            if (!RealPath)
+            {
+                FilePath = Main.DllPath + "/ChromeDebug/" + FilePath.Replace("..", "");
+            }
 
             try
             {
@@ -292,7 +372,7 @@ namespace NppChomeDebugPlugin
         {
             OpenFileDialog Dialog = new OpenFileDialog();
 
-            if (CurrentFile != "")
+            if (CurrentFile != "" && File.Exists(CurrentFile))
             {
                 FileInfo Fo = new FileInfo(CurrentFile);
                 Dialog.InitialDirectory = Fo.DirectoryName;
@@ -343,13 +423,31 @@ namespace NppChomeDebugPlugin
             return IsFile;
         }
 
-        public bool IsUrl(string Url)
+        public bool FileExists(string FilePath)
+        {
+            return File.Exists(FilePath);
+        }
+
+        public string ToAbsolutePath(string WorkingDirectory, string RelPath)
+        {
+            try
+            {
+                string AbsPath = Path.Combine(WorkingDirectory, RelPath);
+                return Path.GetFullPath(AbsPath);
+            }
+            catch
+            {
+                return RelPath;
+            }
+        }
+
+        public bool IsUrl(string Target, string Url)
         {
             bool IsUrl = Uri.IsWellFormedUriString(Url, UriKind.Absolute);
 
             if (IsUrl)
             {
-                Browser.Document.InvokeScript("SetChromeUrl", new object[] { Url });
+                Browser.Document.InvokeScript("SetTarget", new object[] { Target, Url });
             }
             else
             {
@@ -362,32 +460,32 @@ namespace NppChomeDebugPlugin
 
         public void AddRemoveBreakpoint(string FilePath, int LineNr, bool Add)
         {
-            Browser.Document.InvokeScript("ChromeAddRemoveBreakpoint", new object[] { FilePath, LineNr, Add });
+            Browser.Document.InvokeScript("AddRemoveBreakpoint", new object[] { FilePath, LineNr, Add });
         }
 
         public void DebugResume()
         {
-            Browser.Document.InvokeScript("ChromeResume", new object[] {});
+            Browser.Document.InvokeScript("Resume", new object[] {});
         }
 
         public void DebugPause()
         {
-            Browser.Document.InvokeScript("ChromePause", new object[] { });
+            Browser.Document.InvokeScript("Pause", new object[] { });
         }
 
         public void DebugStepOver()
         {
-            Browser.Document.InvokeScript("ChromeStepOver", new object[] { });
+            Browser.Document.InvokeScript("StepOver", new object[] { });
         }
 
         public void DebugStepInto()
         {
-            Browser.Document.InvokeScript("ChromeStepInto", new object[] { });
+            Browser.Document.InvokeScript("StepInto", new object[] { });
         }
 
         public void DebugStepOut()
         {
-            Browser.Document.InvokeScript("ChromeStepOut", new object[] { });
+            Browser.Document.InvokeScript("StepOut", new object[] { });
         }
 
         public void NppAddMarker(int LineNr, int Marker = Main.MARKER_BREAK)
