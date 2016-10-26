@@ -32,3 +32,6 @@ Prerequisite
 * Internet Explorer 10 or higher (tested with IE11)
 * Recent version of Chrome (tested with 53.0.2785.143)
 * Nightly build version of Nodejs (tested with v7.0.0-nightly201609202b5acda7a2)
+
+
+jan-willem.dubbeldam@kropman.nl
