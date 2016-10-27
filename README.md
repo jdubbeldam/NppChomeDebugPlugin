@@ -9,7 +9,7 @@ Features
 
 * Placing breakpoints
 * Debugging javascripts stepping through files and watching variables 
-* Direct updating of changes in javascript files without reloading browser
+* Direct updating of changes in javascript files without reloading browser (is currently not implemented in NodeJs)
 * Search for strings in files
 * Console
 
@@ -30,8 +30,11 @@ Prerequisite
 ============
 
 * Internet Explorer 10 or higher (tested with IE11)
-* Recent version of Chrome (tested with 53.0.2785.143)
+* Recent version of Chrome (tested with 54.0.2840.71)
 * Nightly build version of Nodejs (tested with v7.0.0-nightly201609202b5acda7a2)
 
+TODO
+====
+* Make the breakpoints react to applicable changes in code.
 
 jan-willem.dubbeldam@kropman.nl

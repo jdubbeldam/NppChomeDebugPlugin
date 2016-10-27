@@ -411,7 +411,8 @@ function OpenWsDebug(Type, WsUrl) {
 	AppWs[Type].onopen = function (evt) {									
 		WsSend(Type, '{"method": "Debugger.enable", "id": ' + GetCallId() + ', "params": {}}');
 		WsSend(Type, '{"method": "Debugger.canSetScriptSource", "id": ' + GetCallId() + ', "params": {}}');
-		WsSend(Type, '{"method": "Console.enable", "id": ' + GetCallId() + ', "params": {}}');
+		//WsSend(Type, '{"method": "Console.enable", "id": ' + GetCallId() + ', "params": {}}');
+		WsSend(Type, '{"method": "Runtime.enable", "id": ' + GetCallId() + ', "params": {}}');
 
 		// Keep connection alive
 		setInterval(
@@ -446,10 +447,15 @@ function OpenWsDebug(Type, WsUrl) {
 					HitBreakpoint(Type, Data.params);
 
 					break;
-				case 'Console.messageAdded':
+				case 'Runtime.consoleAPICalled':
 					ConsoleMessage(Type, Data.params);
-
+				
 					break;
+					//
+				//case 'Console.messageAdded':
+				//	ConsoleMessage(Type, Data.params);
+				//
+				//	break;
 			}
 		}
 
@@ -717,6 +723,41 @@ function SelectTab(Name) {
 	$('#tabs a[href="#' + Name + '"]').click();
 }
 
+
+function ConsoleMessage(Type, Params) {
+	var CallFrames, Text;
+	
+	if (Params.args) {
+		if (Params.stackTrace && Params.stackTrace.callFrames) { 
+			CallFrames = Params.stackTrace.callFrames;
+		}
+		
+		if (Params.args[0]) {
+			switch(Params.args[0].type) {
+				case "string":
+					Text = Params.args[0].value;
+					
+					break;
+				case "object": //
+					Text = '<span style="text-decoration: underline; cursor: pointer; " onclick=\'GetProperties("' + Type + '", JSON.stringify(\"' + Params.args[0].objectId.replaceAll('"', '\\"') +  '\"), true); SelectTab("watch"); \'>' + Params.args[0].description + '</span>';
+					
+					break;	
+			}
+		} else {
+			Text = Params.args[0].value;
+		}
+		
+		//if (Params.message.level == 'error') {
+		//	Text = '<span style="color: red;">' + Text + '</span>';
+		//}
+		
+		Text = '<span style="color: gainsboro; width: 150px;">' + Type + '</span>' + ': ' + Text;
+		
+		ConsoleLog(Text, Type, CallFrames);
+	}
+}
+
+/*
 function ConsoleMessage(Type, Params) {
 	var CallFrames, Text;
 	
@@ -749,6 +790,7 @@ function ConsoleMessage(Type, Params) {
 		ConsoleLog(Text, Type, CallFrames);
 	}
 }
+*/
 
 function ConsoleLog(Message, Type  /*optional*/, CallFrames /*optional*/) {
 	var File, Parts, ScriptId, LineNr, Index, Display,
